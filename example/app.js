@@ -13,7 +13,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Inicializa la conexión con la base de datos
-require('./db/main');
+require('./db/main').sequelize.iniciarDB();
 
 const { PORT } = process.env;
 const app = express();

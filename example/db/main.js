@@ -6,7 +6,7 @@
  */
 
 // Importación de utilidades de base de datos.
-const { crearConexion, iniciarDB, relacionar } = require('../../index');
+const { crearConexion, relacionar } = require('../../index');
 
 const { DB: db, DBUSER: user, DBPASS: pass, DBHOST: host, DBPORT: port } = process.env;
 
@@ -18,6 +18,4 @@ const Provincia = require('./modelos/Provincia')(sequelize);
 // Una provincia tiene muchas localidades, y una localidad pertenece a una provincia.
 relacionar('muchos-uno', Localidad, Provincia, 'provincia', 'localidades', 'provincia_id');
 
-iniciarDB(sequelize)
-.then(() => console.log('Conexión y sincronización con la base de datos exitosa.'))
-.catch((error) => console.error('Error al inicializar la base de datos:', error));
+module.exports = {sequelize};
