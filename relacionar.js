@@ -36,6 +36,12 @@ const relacionar = function(relacion, modeloA, modeloB, asA, asB, campoA, campoB
     'muchos-muchos': (modA, modB, aliasA, aliasB, fkA, fkB, modPivote) => {
       modA.belongsToMany(modB, { as: aliasA, through: modPivote, foreignKey: fkA, sourceKey: 'id' });
       modB.belongsToMany(modA, { as: aliasB, through: modPivote, foreignKey: fkB, sourceKey: 'id' });
+      
+      modA.hasMany(modPivote);
+      modPivote.belongsTo(modA);
+
+      modB.hasMany(modPivote);
+      modPivote.belongsTo(modB);
     }
   };
 

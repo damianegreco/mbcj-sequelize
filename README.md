@@ -4,7 +4,7 @@
 
 ## Descripción del Proyecto
 
-`mbcj-sequelize` es una librería para Node.js diseñada para simplificar y agilizar la configuración, conexión y gestión de relaciones en proyectos que utilizan Sequelize como ORM. Esta utilidad centraliza la lógica de conexión a la base de datos (especialmente PostgreSQL), la sincronización de modelos y la creación de asociaciones, permitiendo a los desarrolladores enfocarse en la lógica de negocio en lugar de en la configuración repetitiva.
+`mbcj-sequelize` es una librería para Node.js diseñada para simplificar y agilizar la configuración, conexión y gestión de relaciones en proyectos que utilizan Sequelize como ORM. Esta utilidad centraliza la lógica de conexión a la base de datos (PostgreSQL), la sincronización de modelos y la creación de asociaciones, permitiendo a los desarrolladores enfocarse en la lógica de negocio en lugar de en la configuración repetitiva.
 
 El público objetivo son desarrolladores de Node.js que buscan una manera más limpia y modular de integrar Sequelize en sus aplicaciones.
 
@@ -12,10 +12,10 @@ El público objetivo son desarrolladores de Node.js que buscan una manera más l
 
 ## Características
 
--   **Conexión Simplificada**: Crea una instancia de Sequelize y establece la conexión con la base de datos a través de una única función, utilizando variables de entorno.
--   **Inicialización Flexible**: Sincroniza los modelos con la base de datos utilizando métodos flexibles como `sync`, `alter` o `force`.
--   **Gestor de Relaciones**: Incluye una función `relacionar` que abstrae la complejidad de definir asociaciones `uno a uno`, `muchos a uno` y `muchos a muchos`.
--   **Modularidad**: Diseñado para ser fácilmente integrable en cualquier proyecto Node.js, promoviendo una estructura de base de datos limpia y organizada.
+-   **Conexión Simplificada**: Crea una instancia de Sequelize y establece la conexión con la base de datos a través de una única función (`crearConexion`), utilizando un objeto de configuración o variables de entorno.
+-   **Inicialización Flexible**: Autentica y sincroniza los modelos con la base de datos mediante un método (`iniciarDB`) que soporta diferentes estrategias como `sync` (por defecto), `alter` o `force`.
+-   **Gestor de Relaciones Declarativo**: Incluye una función (`relacionar`) que abstrae la complejidad de definir asociaciones `uno-uno`, `muchos-uno` y `muchos-muchos` entre modelos de una manera más legible.
+-   **Modularidad**: Promueve una estructura de base de datos limpia y organizada, siendo fácilmente integrable en cualquier proyecto Node.js.
 
 ---
 
@@ -23,35 +23,38 @@ El público objetivo son desarrolladores de Node.js que buscan una manera más l
 
 La librería se compone de los siguientes archivos principales:
 
--   `index.js`: Punto de entrada principal que exporta todas las utilidades de la librería.
--   `conexion.js`: Contiene las funciones `crearConexion` para instanciar Sequelize y `iniciarDB` para autenticar y sincronizar la base de datos.
--   `relacionar.js`: Exporta la función `relacionar`, diseñada para establecer asociaciones entre los modelos de Sequelize de forma declarativa.
+-   `index.js`: Punto de entrada que exporta las utilidades `crearConexion`, `iniciarDB` y `relacionar` para un fácil acceso.
+-   `conexion.js`: Contiene la lógica para crear la instancia de Sequelize (`crearConexion`) y para sincronizar la base de datos (`iniciarDB`).
+-   `relacionar.js`: Exporta la función `relacionar`, diseñada para establecer asociaciones entre los modelos de Sequelize.
+-   `example/`: Un directorio con un proyecto de ejemplo funcional que demuestra cómo utilizar la librería en una aplicación Express.
 
 ---
 
 ## Tecnologías y Dependencias
 
-Este proyecto se basa en las siguientes tecnologías:
-
--   [Node.js](https://nodejs.org/)
+**Dependencias de producción:**
 -   [Sequelize](https://sequelize.org/): ORM para Node.js.
 -   [pg](https://www.npmjs.com/package/pg): Cliente de PostgreSQL para Node.js.
--   [pg-hstore](https://www.npmjs.com/package/pg-hstore): Serializador de datos para el tipo HSTORE de PostgreSQL.
+-   [pg-hstore](https://www.npmjs.com/package/pg-hstore): Serializador/deserializador para el tipo de dato HSTORE de PostgreSQL.
+
+**Dependencias de desarrollo (para el ejemplo):**
+-   [Express](https://expressjs.com/): Framework web para Node.js.
+-   [Dotenv](https://www.npmjs.com/package/dotenv): Para cargar variables de entorno desde un archivo `.env`.
+-   [Nodemon](https://nodemon.io/): Herramienta que reinicia automáticamente la aplicación cuando detecta cambios.
 
 ---
 
 ## Instalación
 
-1.  **Instalar el paquete**:
-    Añade la librería a tu proyecto usando npm:
+1.  **Añade la librería a tu proyecto**:
     ```sh
     npm install mbcj-sequelize
     ```
 
-2.  **Configurar Variables de Entorno**:
+2.  **Configura las Variables de Entorno**:
     Crea un archivo `.env` en la raíz de tu proyecto para configurar las credenciales de la base de datos.
     ```ini
-    DB="nombre_de_tu_db"
+    DB="nombre_de_la_db"
     DBUSER="usuario_db"
     DBPASS="contraseña_db"
     DBHOST="localhost"
@@ -62,52 +65,39 @@ Este proyecto se basa en las siguientes tecnologías:
 
 ## Uso
 
-A continuación, se muestra un ejemplo completo de cómo utilizar `mbcj-sequelize` para configurar la base de datos, definir modelos y establecer relaciones.
+A continuación, se muestra un ejemplo de cómo utilizar `mbcj-sequelize` para configurar la base de datos, definir modelos y establecer relaciones en una aplicación Express.
 
-### 1. Crear el archivo de inicialización de la DB
+### 1. Inicialización de la Base de Datos
 
-Crea un archivo principal para gestionar la base de datos (por ejemplo, `db/index.js`). Este archivo se encargará de todo el proceso.
+Crea un archivo para gestionar la configuración de la base de datos (ej. `db/main.js`).
 
 ```javascript
-// db/index.js
+// db/main.js
+const { crearConexion, relacionar } = require('mbcj-sequelize');
 
-// 1. Importar las utilidades de la librería
-const { crearConexion, iniciarDB, relacionar } = require('mbcj-sequelize');
-
-// (Asegúrate de cargar las variables de entorno, por ejemplo con dotenv)
-// require('dotenv').config();
-
-// 2. Extraer las credenciales desde process.env
+// Asegúrate de haber cargado las variables de entorno previamente (ej. con dotenv)
 const { DB: db, DBUSER: user, DBPASS: pass, DBHOST: host, DBPORT: port } = process.env;
 
-// 3. Crear la instancia de Sequelize
+// 1. Crea la instancia de Sequelize
 const sequelize = crearConexion({ db, user, pass, host, port });
 
-// 4. Importar y definir los modelos
-const Provincia = require('./modelos/Provincia')(sequelize);
+// 2. Define tus modelos pasándoles la instancia de sequelize
 const Localidad = require('./modelos/Localidad')(sequelize);
+const Provincia = require('./modelos/Provincia')(sequelize);
 
-// 5. Establecer las relaciones entre modelos
+// 3. Establece las relaciones entre los modelos
 // Una provincia tiene muchas localidades (relación muchos a uno)
 relacionar('muchos-uno', Localidad, Provincia, 'provincia', 'localidades', 'provincia_id');
 
-// 6. Iniciar y sincronizar la base de datos
-iniciarDB(sequelize, 'sync') // puedes usar 'alter' o 'force' en desarrollo
-  .then((tipo) => console.log(`Conexión y sincronización (${tipo}) exitosa.`))
-  .catch((error) => console.error('Error al inicializar la base de datos:', error));
-
-// Opcional: exportar los modelos para usarlos en otras partes de la app
-module.exports = {
-  Provincia,
-  Localidad
-};
+// 4. Exporta la instancia para usarla en tu aplicación
+module.exports = { sequelize };
 ```
 
-### 2. Definir los Modelos
+### 2. Definición de Modelos
 
-Crea tus modelos de Sequelize en archivos separados. Cada archivo debe exportar una función que recibe `sequelize` y devuelve el modelo definido.
+Crea tus modelos de Sequelize en archivos separados. Cada modelo debe exportar una función que recibe `sequelize` y devuelve el modelo definido.
 
-**Ejemplo de Modelo `Provincia`**:
+**Modelo `Provincia.js`**:
 ```javascript
 // modelos/Provincia.js
 const { DataTypes } = require('sequelize');
@@ -116,11 +106,11 @@ function definir(sequelize) {
   const Provincia = sequelize.define('provincia', {
     nombre: {
       type: DataTypes.STRING,
-      allowNull: false
+      defaultValue: 'Desconocido'
     }
   }, {
     tableName: 'provincias',
-    paranoid: true // Habilita borrado lógico
+    paranoid: true // Habilita borrado lógico (soft delete)
   });
 
   return Provincia;
@@ -129,7 +119,7 @@ function definir(sequelize) {
 module.exports = definir;
 ```
 
-**Ejemplo de Modelo `Localidad`**:
+**Modelo `Localidad.js`**:
 ```javascript
 // modelos/Localidad.js
 const { DataTypes } = require('sequelize');
@@ -138,9 +128,9 @@ function definir(sequelize) {
   const Localidad = sequelize.define('localidad', {
     nombre: {
       type: DataTypes.STRING,
-      allowNull: false
+      defaultValue: 'Desconocido'
     }
-    // Sequelize añadirá automáticamente 'provincia_id' por la relación
+    // Sequelize añadirá automáticamente 'provincia_id' debido a la relación
   }, {
     tableName: 'localidades',
     paranoid: true
@@ -152,26 +142,46 @@ function definir(sequelize) {
 module.exports = definir;
 ```
 
-### 3. Cargar la configuración en tu App
+### 3. Integración en la Aplicación Principal
 
-Finalmente, solo necesitas importar el archivo de inicialización de la base de datos en el punto de entrada de tu aplicación (por ejemplo, `app.js` o `index.js`).
+En el punto de entrada de tu aplicación (ej. `app.js`), importa la configuración de la base de datos e inicia la conexión.
 
 ```javascript
 // app.js
 const express = require('express');
-require('dotenv').config(); // Carga las variables de entorno
+const path = require('path');
 
-// Inicializa la conexión con la base de datos
-require('./db'); // Esto ejecutará el código de db/index.js
+// Carga las variables de entorno
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Importa la instancia de sequelize y la inicializa
+const { sequelize } = require('./db/main');
+sequelize.iniciarDB('sync') // Puedes usar 'alter' o 'force' en desarrollo
+  .then(tipo => console.log(`Base de datos conectada y sincronizada (${tipo}).`))
+  .catch(err => console.error('Error al iniciar la base de datos:', err));
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.send('Aplicación conectada a la base de datos.');
+  res.send('App con db conectada correctamente');
 });
 
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
 ```
+
+---
+
+## Licencia
+
+Este proyecto está bajo la Licencia ISC. Consulta el archivo `LICENSE` para más detalles.
+
+---
+
+## Contacto
+
+Si tienes alguna pregunta o sugerencia, no dudes en abrir un "issue" en el repositorio.
+
+* **Nombre del Autor**: Damian Greco
